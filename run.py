@@ -1,7 +1,18 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import os, json, csv, unicodedata
 
-post_data = json.loads(open(os.environ['req']).read())
-response = open(os.environ['res'], 'w')
+try:
+    post_data = json.loads(open(os.environ['req']).read())
+except:
+    post_data = {
+                "dominio": "diabetes",
+                "query": "pie diabético con diabetes tipo 1"
+            }
+try:
+    response = open(os.environ['res'], 'w')
+except:
+    response = open('dummy_output.txt', 'w')
 
 # para quitar acentos
 def remove_accents(input_str):
@@ -42,5 +53,6 @@ for label, keyword in dominio_db:
 
 output = ','.join(labels)
 
+print output.encode('utf-8')
 response.write(output.encode('utf-8'))
 response.close()
