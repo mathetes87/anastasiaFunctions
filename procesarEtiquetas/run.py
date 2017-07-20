@@ -6,9 +6,9 @@ try:
     post_data = json.loads(open(os.environ['req']).read())
 except:
     post_data = {
-                "dominio": "diabetes",
-                "query": "pie diabético con diabetes tipo 1"
-            }
+        "dominio": "diabetes",
+        "query": "población"
+    }
 try:
     response = open(os.environ['res'], 'w')
 except:
@@ -38,8 +38,8 @@ query = remove_accents(post_data['query'].lower())
 etiquetas_db = json.loads(open('etiquetas_db.json', 'rt').read())
 dominio_db = etiquetas_db[post_data['dominio']]
 
-# buscar etiquetas en query, no repetirlas y quitar acentos
-# buscar sinonimos tambien
+# buscar etiquetas en query
+# no repetirlas, quitar acentos y buscar sinonimos
 labels = []
 for label, keyword in dominio_db:
     label = label.capitalize()
@@ -50,9 +50,49 @@ for label, keyword in dominio_db:
             # revisar que etiqueta no este repetida
             if label not in labels:
                 labels.append(label)
+                
+# identificar etiquetas mas profundas
+# primero identificar caminos en el arbol, quitando nodos vacios
+caminos_match_etiquetas = []
+with open("arbol_etiquetas.csv", "r") as f:
+    reader = csv.reader(f, delimiter=',')
+    caminos = list(reader)
+    caminos = [[nodo for nodo in camino if nodo != ''] for camino in caminos]
 
-output = ','.join(labels)
+# armar listado auxiliar con match entre etiquetas y caminos
+# registrar profundidad de nodo identificado
+max_label_depth = -1
+for label in labels:
+    for camino in caminos:
+        if label in camino:
+            for idx, node in enumerate(camino):
+                if label == node and idx >= max_label_depth:
+                    caminos_match_etiquetas.append([camino, label, idx])
+                    if max_label_depth < idx:
+                        max_label_depth = idx
 
-print output.encode('utf-8')
-response.write(output.encode('utf-8'))
+# dejar solo los nodos mas profundos
+caminos_profundos = []
+for i, camino_match_etiqueta in enumerate(caminos_match_etiquetas):
+    if camino_match_etiqueta[2] == max_label_depth:
+        caminos_profundos.append(camino_match_etiqueta)
+
+# si es más de uno, retornarlos para que usuario filtre
+if len(caminos_profundos) > 1:
+    falta_filtrar = True
+else:
+    falta_filtrar = False
+
+labels = [row[1].encode('utf-8') for row in caminos_profundos]
+depth = max_label_depth
+output = {
+            'etiquetas': labels,
+            'profundidad': depth,
+            'falta_filtrar': falta_filtrar
+        }
+
+output = json.dumps(output, ensure_ascii=False)
+
+print output
+response.write(output)
 response.close()
