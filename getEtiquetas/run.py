@@ -22,7 +22,7 @@ def remove_accents(input_str):
     return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
 # para obtener listado de sinonimos
-with open('Sinonimos_w2v.csv', 'r') as f:
+with open('../sharedFiles/Sinonimos_w2v.csv', 'rt') as f:
     reader = csv.reader(f, delimiter=',')
     sinonimos = list(reader)
 def get_sinonimos(keyword):
@@ -35,7 +35,7 @@ def get_sinonimos(keyword):
 query = remove_accents(post_data['query'].lower())
 
 # leer base de etiquetas
-etiquetas_db = json.loads(open('etiquetas_db.json', 'rt').read())
+etiquetas_db = json.loads(open('../sharedFiles/etiquetas_db.json', 'rt').read())
 dominio_db = etiquetas_db[post_data['dominio']]
 
 # buscar etiquetas en query
@@ -54,7 +54,7 @@ for label, keyword in dominio_db:
 # identificar etiquetas mas profundas
 # primero identificar caminos en el arbol, quitando nodos vacios
 caminos_match_etiquetas = []
-with open("arbol_etiquetas.csv", "r") as f:
+with open("../sharedFiles/arbol_etiquetas.csv", "rt") as f:
     reader = csv.reader(f, delimiter=',')
     caminos = list(reader)
     caminos = [[nodo for nodo in camino if nodo != ''] for camino in caminos]
