@@ -7,7 +7,9 @@ try:
 except:
     post_data = {
         "dominio": "diabetes",
-        "query": "población"
+        "query": "embarazo",
+        "etiqueta": "Diabetes gestacional",
+        "profundidad": 1
     }
 try:
     response = open(os.environ['res'], 'w')
@@ -21,75 +23,52 @@ def remove_accents(input_str):
     nfkd_form = unicodedata.normalize('NFKD', input_str)
     return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-# para obtener listado de sinonimos
-with open('Sinonimos_w2v.csv', 'r') as f:
-    reader = csv.reader(f, delimiter=',')
-    sinonimos = list(reader)
-def get_sinonimos(keyword):
-    for group in sinonimos:
-        if keyword in group:
-            return group
-    return [keyword]
-
 # obtener query de llamada sin acentos
 query = remove_accents(post_data['query'].lower())
 
 # leer base de etiquetas
-etiquetas_db = json.loads(open('etiquetas_db.json', 'rt').read())
+etiquetas_db = json.loads(open('../sharedFiles/etiquetas_db.json', 'rt').read())
 dominio_db = etiquetas_db[post_data['dominio']]
 
-# buscar etiquetas en query
-# no repetirlas, quitar acentos y buscar sinonimos
-labels = []
-for label, keyword in dominio_db:
-    label = label.capitalize()
-    keywords_syn = get_sinonimos(keyword)
-    # buscar keyword y sus sinonimos en base de etiquetas
-    for keyword_syn in keywords_syn:
-        if remove_accents(keyword_syn) in query and len(keyword_syn) > 1:
-            # revisar que etiqueta no este repetida
-            if label not in labels:
-                labels.append(label)
-                
-# identificar etiquetas mas profundas
-# primero identificar caminos en el arbol, quitando nodos vacios
-caminos_match_etiquetas = []
-with open("arbol_etiquetas.csv", "r") as f:
+# encontrar subetiquetas a partir de nivel de profundidad indicado
+label = post_data['etiqueta']
+depth = post_data['profundidad']
+with open("../sharedFiles/arbol_etiquetas.csv", "rt") as f:
     reader = csv.reader(f, delimiter=',')
     caminos = list(reader)
     caminos = [[nodo for nodo in camino if nodo != ''] for camino in caminos]
 
-# armar listado auxiliar con match entre etiquetas y caminos
-# registrar profundidad de nodo identificado
-max_label_depth = -1
-for label in labels:
-    for camino in caminos:
-        if label in camino:
-            for idx, node in enumerate(camino):
-                if label == node and idx >= max_label_depth:
-                    caminos_match_etiquetas.append([camino, label, idx])
-                    if max_label_depth < idx:
-                        max_label_depth = idx
+caminos_match_etiquetas = []
+for camino in caminos:
+    try:
+        if label == camino[depth]:
+            caminos_match_etiquetas.append(camino)
+    except:
+        pass
 
-# dejar solo los nodos mas profundos
-caminos_profundos = []
-for i, camino_match_etiqueta in enumerate(caminos_match_etiquetas):
-    if camino_match_etiqueta[2] == max_label_depth:
-        caminos_profundos.append(camino_match_etiqueta)
+# tiene subetiquetas?
+subetiquetas = []
+for camino in caminos_match_etiquetas:
+    if len(camino)-1 > depth:
+        subetiquetas.append(camino[depth+1].encode('utf-8'))
 
-# si es más de uno, retornarlos para que usuario filtre
-if len(caminos_profundos) > 1:
-    falta_filtrar = True
-else:
+# armar output
+if len(subetiquetas) == 0:    # si es nivel final, buscar preguntas resumen
     falta_filtrar = False
-
-labels = [row[1].encode('utf-8') for row in caminos_profundos]
-depth = max_label_depth
-output = {
-            'etiquetas': labels,
-            'profundidad': depth,
-            'falta_filtrar': falta_filtrar
-        }
+    # buscar preguntas
+    output = {
+                'preguntas': [],
+                'etiquetas': subetiquetas
+            }
+else:    # si NO es nivel final, retornarlos para que usuario filtre
+    falta_filtrar = True
+    labels = [etiqueta.encode('utf-8') for etiqueta in subetiquetas]
+    depth = depth + 1
+    output = {
+                'etiquetas': labels,
+                'profundidad': depth,
+                'falta_filtrar': falta_filtrar
+            }
 
 output = json.dumps(output, ensure_ascii=False)
 
