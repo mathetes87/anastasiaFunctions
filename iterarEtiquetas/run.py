@@ -8,8 +8,8 @@ except:
     post_data = {
         "dominio": "diabetes",
         "query": "embarazo",
-        "etiqueta": "Diabetes gestacional",
-        "profundidad": 1
+        "etiqueta": "Tratamiento de la d.g",
+        "profundidad": 2
     }
 try:
     response = open(os.environ['res'], 'w')
@@ -53,21 +53,39 @@ for camino in caminos_match_etiquetas:
         subetiquetas.append(camino[depth+1].encode('utf-8'))
 
 # armar output
-if len(subetiquetas) == 0:    # si es nivel final, buscar preguntas resumen
-    falta_filtrar = False
+# si es nivel final, buscar preguntas resumen
+if len(subetiquetas) == 0:
     # buscar preguntas
+    preguntas = {
+                "con_resumen": [],
+                "sin_resumen": []
+            } 
+    with open("../sharedFiles/resumen_preguntas_etiquetas.tsv", "rt") as f:
+        reader = csv.reader(f, delimiter='\t')
+        preguntas_db = list(reader)
+    for row in preguntas_db:
+        label_at_depth = row[depth+2]
+        resumen = row[2]
+        pregunta = row[0] # OJALA OCUPAR ID A FUTURO !!!!!!
+        if label_at_depth == label:
+            # verificar si tiene resumen
+            if resumen != "":
+                preguntas['sin_resumen'].append(pregunta)
+            else:
+                preguntas['con_resumen'].append(pregunta)
     output = {
-                'preguntas': [],
+                'falta_filtrar': False,
+                'preguntas': preguntas,
                 'etiquetas': subetiquetas
             }
-else:    # si NO es nivel final, retornarlos para que usuario filtre
-    falta_filtrar = True
+# si NO es nivel final, retornarlos para que usuario filtre
+else:
     labels = [etiqueta.encode('utf-8') for etiqueta in subetiquetas]
     depth = depth + 1
     output = {
+                'falta_filtrar': True,
                 'etiquetas': labels,
                 'profundidad': depth,
-                'falta_filtrar': falta_filtrar
             }
 
 output = json.dumps(output, ensure_ascii=False)

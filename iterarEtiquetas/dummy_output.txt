@@ -1,1 +1,1 @@
-{"falta_filtrar": true, "etiquetas": ["Definiciones de d.g", "Complicaciones d.g", "Complicaciones del bebe y d.g", "Tratamiento de la d.g", "Diagnosticos dg", "Sintomatologia de d.g", "Pronosticos d.g"], "profundidad": 2}
+{"preguntas": {"sin_resumen": [], "con_resumen": []}, "falta_filtrar": false, "etiquetas": []}
