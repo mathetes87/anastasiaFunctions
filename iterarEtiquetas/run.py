@@ -95,10 +95,10 @@ else:
                 'falta_filtrar': True,
                 'etiquetas': labels,
                 'profundidad': depth+1,
-                'falta_filtrar': falta_filtrar
             }
-print output
+
 output = json.dumps(output, ensure_ascii=False)
+print output
 
 response.write(output)
 response.close()

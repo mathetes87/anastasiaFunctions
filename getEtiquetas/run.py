@@ -88,7 +88,8 @@ depth = max_label_depth
 output = {
             'etiquetas': labels,
             'profundidad': depth,
-            'falta_filtrar': falta_filtrar
+            'falta_filtrar': falta_filtrar,
+            'acénto de prueba': 'probando acentós'
         }
 
 output = json.dumps(output, ensure_ascii=False)
