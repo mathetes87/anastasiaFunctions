@@ -1,1 +1,1 @@
-{"falta_filtrar": false, "etiquetas": ["Diabetes"], "profundidad": 1}
+{"etiquetas": ["Informacion general y diabetes", "Informacion general y diabetes", "Informacion general y diabetes", "Informacion general y diabetes", "Informacion general y diabetes", "Informacion general y diabetes", "Informacion general y diabetes", "Informacion general y diabetes", "Informacion general y diabetes", "Informacion general y diabetes"], "falta_filtrar": true, "acénto de prueba": "poblacion", "profundidad": 1}

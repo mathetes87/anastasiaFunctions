@@ -97,7 +97,18 @@ else:
                 'profundidad': depth+1,
             }
 
-output = json.dumps(output, ensure_ascii=False)
+def byteify(input):
+    if isinstance(input, dict):
+        return {byteify(key): byteify(value)
+                for key, value in input.iteritems()}
+    elif isinstance(input, list):
+        return [byteify(element) for element in input]
+    elif isinstance(input, unicode):
+        return input.encode('utf-8')
+    else:
+        return input
+
+output = json.dumps(byteify(output), ensure_ascii=False)
 print output
 
 response.write(output)
