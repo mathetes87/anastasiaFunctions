@@ -89,7 +89,7 @@ output = {
             'etiquetas': labels,
             'profundidad': depth,
             'falta_filtrar': falta_filtrar,
-            'acénto de prueba': 'probando acentós'
+            'acénto de prueba': caminos
         }
 
 output = json.dumps(output, ensure_ascii=False)
