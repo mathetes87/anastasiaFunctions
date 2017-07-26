@@ -76,14 +76,60 @@ caminos_profundos = []
 for i, camino_match_etiqueta in enumerate(caminos_match_etiquetas):
     if camino_match_etiqueta[2] == max_label_depth:
         caminos_profundos.append(camino_match_etiqueta)
+        
+with open("../sharedFiles/resumen_preguntas_etiquetas.tsv", "rt") as f:
+    reader = csv.reader(f, delimiter='\t')
+    preguntas = list(reader)
+
+def get_preguntas(label, depth):
+    sin_resumen = []
+    preguntas_resumen = []
+    for i, col in enumerate(preguntas[0]):
+        if col == 'Etiqueta '+str(depth+1):
+            depth_index = i
+    for row in preguntas:
+        label_at_depth = row[depth_index].lower()
+        resumen_pregunta = row[2]
+        respuesta = row[1]
+        pregunta = row[0] # IDEALMENTE TENER UN ID!!!
+        if label_at_depth == label:
+            if resumen_pregunta == '':
+                sin_resumen.append(pregunta)
+            else:
+                pregunta_resumen = {
+                    'resumen_pregunta': resumen_pregunta, 
+                    'respuesta': respuesta
+                }
+                if pregunta_resumen not in preguntas_resumen:
+                    preguntas_resumen.append(pregunta_resumen)
+    return (sin_resumen, preguntas_resumen)
 
 # si es más de uno, retornarlos para que usuario filtre
 if len(caminos_profundos) > 1:
     falta_filtrar = True
+    labels = []
+    for camino_profundo in caminos_profundos:
+        # si no tiene subetiquetas, el mismo es la etiqueta
+        try:
+            labels.append({
+                        'etiqueta': camino_profundo[0][max_label_depth+1],
+                        'subetiquetas': True
+                    })
+        except:
+            etiqueta = camino_profundo[0][max_label_depth].lower()
+            sin_resumen, preguntas_resumen = get_preguntas(etiqueta, max_label_depth)
+            labels.append({
+                        'etiqueta': etiqueta,
+                        'subetiquetas': False , 
+                        'preguntas': {
+                                    'con_resumen': preguntas_resumen,
+                                    'sin_resumen': sin_resumen
+                                }, 
+                    })
 else:
     falta_filtrar = False
+    labels = [row[1].encode('utf-8') for row in caminos_profundos]
 
-labels = [row[1].encode('utf-8') for row in caminos_profundos]
 depth = max_label_depth
 output = {
             'etiquetas': labels,

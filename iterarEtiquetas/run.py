@@ -8,8 +8,8 @@ except:
     post_data = {
         "dominio": "diabetes",
         "query": "embarazo",
-        "etiqueta": "Diabetes Gestacional",
-        "profundidad": 1
+        "etiqueta": "definiciones de d.g",
+        "profundidad": 2
     }
 try:
     response = open(os.environ['res'], 'w')
@@ -28,15 +28,15 @@ query = remove_accents(post_data['query'].lower())
 
 # leer base de etiquetas
 etiquetas_db = json.loads(open('../sharedFiles/etiquetas_db.json', 'rt').read())
-dominio_db = etiquetas_db[post_data['dominio']]
+dominio_db = etiquetas_db[post_data['dominio'].lower()]
 
 # encontrar subetiquetas a partir de nivel de profundidad indicado
-label = post_data['etiqueta']
+label = post_data['etiqueta'].lower()
 depth = post_data['profundidad']
 with open("../sharedFiles/arbol_etiquetas.csv", "rt") as f:
     reader = csv.reader(f, delimiter=',')
     caminos = list(reader)
-    caminos = [[nodo for nodo in camino if nodo != ''] for camino in caminos]
+    caminos = [[nodo.lower() for nodo in camino if nodo != ''] for camino in caminos]
 
 caminos_match_etiquetas = []
 for camino in caminos:
@@ -52,20 +52,18 @@ for camino in caminos_match_etiquetas:
     if len(camino)-1 > depth:
         subetiquetas.append(camino[depth+1].encode('utf-8'))
 
-# armar output
-# si es nivel final, buscar preguntas resumen
-if len(subetiquetas) == 0:
+with open("../sharedFiles/resumen_preguntas_etiquetas.tsv", "rt") as f:
+    reader = csv.reader(f, delimiter='\t')
+    preguntas = list(reader)
+
+def get_preguntas(label, depth):
     sin_resumen = []
     preguntas_resumen = []
-    # buscar preguntas
-    with open("../sharedFiles/resumen_preguntas_etiquetas.tsv", "rt") as f:
-        reader = csv.reader(f, delimiter='\t')
-        preguntas = list(reader)
     for i, col in enumerate(preguntas[0]):
         if col == 'Etiqueta '+str(depth+1):
             depth_index = i
     for row in preguntas:
-        label_at_depth = row[depth_index]
+        label_at_depth = row[depth_index].lower()
         resumen_pregunta = row[2]
         respuesta = row[1]
         pregunta = row[0] # IDEALMENTE TENER UN ID!!!
@@ -79,6 +77,14 @@ if len(subetiquetas) == 0:
                 }
                 if pregunta_resumen not in preguntas_resumen:
                     preguntas_resumen.append(pregunta_resumen)
+    return (sin_resumen, preguntas_resumen)
+
+# armar output
+# si es nivel final, buscar preguntas resumen
+if len(subetiquetas) == 0:
+    # buscar preguntas
+    sin_resumen, preguntas_resumen = get_preguntas(label, depth)
+    
     output = {
                 'falta_filtrar': False,
                 'preguntas': {
