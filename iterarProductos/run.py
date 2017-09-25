@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
-import json, csv
+import json, csv, os
 
 # inputs y outputs
 try:
