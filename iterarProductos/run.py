@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
-import json, csv, requests
+import json, csv
 
 # inputs y outputs
 try:
     post_data = json.loads(open(os.environ['req']).read())
 except:
+    import requests
     query = "donde puedo encontrar una parrilla"
 
     url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
