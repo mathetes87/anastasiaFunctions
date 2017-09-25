@@ -1,141 +1,70 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-import os, json, csv, unicodedata
+# coding: utf-8
+import json, csv, requests
 
+# inputs y outputs
 try:
     post_data = json.loads(open(os.environ['req']).read())
 except:
-    post_data = {
-        "dominio": "diabetes",
-        "query": "población"
+    query = "donde puedo encontrar una parrilla"
+
+    url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
+    params = {
+        "document": 
+            {
+                "content": query,
+                "language": "es",
+                "type": "PLAIN_TEXT"
+            }
     }
+
+    r = requests.post(url, data=json.dumps(params))
+    post_data = {
+        "categoria": 1,
+        "eleccion": 2,
+        "response": json.loads(r.text)
+    }
+
+# datos obtenidos de llamada
+categoria_inicial = post_data['categoria']
+eleccion = post_data['eleccion']
+tokens = post_data['response']['tokens']
+
 try:
     response = open(os.environ['res'], 'w')
 except:
     response = open('dummy_output.txt', 'w')
 
-# para quitar acentos
-def remove_accents(input_str):
-    if type(input_str) == str:
-        input_str = unicode(input_str, 'utf-8')
-    nfkd_form = unicodedata.normalize('NFKD', input_str)
-    return u"".join([c for c in nfkd_form if not unicodedata.combining(c)])
+# funciones auxiliares para recorrer árbol sintáctico de la oración
+def distance_to_token(current_token, target_token, distance=0):
+    new_token = tokens[current_token['dependencyEdge']['headTokenIndex']]
+    if current_token == target_token:
+        # si encontré el token que buscaba
+        return distance
+    elif new_token == current_token:
+        # si llegué a la raiz se vuelve circular
+        return distance + 1
+    else:
+        distance += 1
+        return distance_to_token(new_token, target_token, distance)
+    
+def find_tokens_by_label_or_tag(label_or_tag, identifier):
+    tokens_found = []
+    for i, token in enumerate(tokens):
+        tag_match = (label_or_tag == "label" and token['dependencyEdge']['label'] == identifier)
+        label_match = (label_or_tag == "tag" and token['partOfSpeech']['tag'] == identifier)
+        if label_match or tag_match:
+            tokens_found.append(token)            
+    return tokens_found
 
-# para obtener listado de sinonimos
-with open('../sharedFiles/Sinonimos_w2v.csv', 'rt') as f:
-    reader = csv.reader(f, delimiter=',')
-    sinonimos = list(reader)
-def get_sinonimos(keyword):
-    for group in sinonimos:
-        if keyword in group:
-            return group
-    return [keyword]
-
-# obtener query de llamada sin acentos
-query = remove_accents(post_data['query'].lower())
-
-# leer base de etiquetas
-etiquetas_db = json.loads(open('../sharedFiles/etiquetas_db.json', 'rt').read())
-dominio_db = etiquetas_db[post_data['dominio']]
-
-# buscar etiquetas en query
-# no repetirlas, quitar acentos y buscar sinonimos
-labels = []
-for label, keyword in dominio_db:
-    label = label.capitalize()
-    keywords_syn = get_sinonimos(keyword)
-    # buscar keyword y sus sinonimos en base de etiquetas
-    for keyword_syn in keywords_syn:
-        if remove_accents(keyword_syn) in query and len(keyword_syn) > 1:
-            # revisar que etiqueta no este repetida
-            if label not in labels:
-                labels.append(label)
-                
-# identificar etiquetas mas profundas
-# primero identificar caminos en el arbol, quitando nodos vacios
-caminos_match_etiquetas = []
-with open("../sharedFiles/arbol_etiquetas.csv", "rt") as f:
-    reader = csv.reader(f, delimiter=',')
-    caminos = list(reader)
-    caminos = [[nodo for nodo in camino if nodo != ''] for camino in caminos]
-
-# armar listado auxiliar con match entre etiquetas y caminos
-# registrar profundidad de nodo identificado
-max_label_depth = -1
-for label in labels:
-    for camino in caminos:
-        if label in camino:
-            for idx, node in enumerate(camino):
-                if label == node and idx >= max_label_depth:
-                    caminos_match_etiquetas.append([camino, label, idx])
-                    if max_label_depth < idx:
-                        max_label_depth = idx
-
-# dejar solo los nodos mas profundos
-caminos_profundos = []
-for i, camino_match_etiqueta in enumerate(caminos_match_etiquetas):
-    if camino_match_etiqueta[2] == max_label_depth:
-        caminos_profundos.append(camino_match_etiqueta)
-        
-with open("../sharedFiles/resumen_preguntas_etiquetas.tsv", "rt") as f:
-    reader = csv.reader(f, delimiter='\t')
-    preguntas = list(reader)
-
-def get_preguntas(label, depth):
-    sin_resumen = []
-    preguntas_resumen = []
-    for i, col in enumerate(preguntas[0]):
-        if col == 'Etiqueta '+str(depth+1):
-            depth_index = i
-    for row in preguntas:
-        label_at_depth = row[depth_index].lower()
-        resumen_pregunta = row[2]
-        respuesta = row[1]
-        pregunta = row[0] # IDEALMENTE TENER UN ID!!!
-        if label_at_depth == label:
-            if resumen_pregunta == '':
-                sin_resumen.append(pregunta)
-            else:
-                pregunta_resumen = {
-                    'resumen_pregunta': resumen_pregunta, 
-                    'respuesta': respuesta
-                }
-                if pregunta_resumen not in preguntas_resumen:
-                    preguntas_resumen.append(pregunta_resumen)
-    return (sin_resumen, preguntas_resumen)
-
-# si es más de uno, retornarlos para que usuario filtre
-if len(caminos_profundos) > 1:
-    falta_filtrar = True
-    labels = []
-    for camino_profundo in caminos_profundos:
-        # si no tiene subetiquetas, el mismo es la etiqueta
-        try:
-            labels.append({
-                        'etiqueta': camino_profundo[0][max_label_depth+1],
-                        'subetiquetas': True
-                    })
-        except:
-            etiqueta = camino_profundo[0][max_label_depth].lower()
-            sin_resumen, preguntas_resumen = get_preguntas(etiqueta, max_label_depth)
-            labels.append({
-                        'etiqueta': etiqueta,
-                        'subetiquetas': False , 
-                        'preguntas': {
-                                    'con_resumen': preguntas_resumen,
-                                    'sin_resumen': sin_resumen
-                                }, 
-                    })
-else:
-    falta_filtrar = False
-    labels = [row[1].encode('utf-8') for row in caminos_profundos]
-
-depth = max_label_depth
-output = {
-            'etiquetas': labels,
-            'profundidad': depth,
-            'falta_filtrar': falta_filtrar
-        }
+def closest_token(current_token, candidates):
+    closest = {'token': None, 'distance': 2112}
+    for candidate in candidates:
+        this_distance = distance_to_token(current_token, candidate)
+        if this_distance < closest['distance']:
+            closest['distance'] = this_distance
+            closest['token'] = candidate
+    return closest['token'], closest['distance']
 
 def byteify(input):
     if isinstance(input, dict):
@@ -148,8 +77,78 @@ def byteify(input):
     else:
         return input
 
+root = find_tokens_by_label_or_tag("label", identifier='ROOT')[0]
+closest_noun, _ = closest_token(root, find_tokens_by_label_or_tag("tag", identifier='NOUN'))
+        
+print "Raíz de la oración: '{}'".format(root['text']['content'])
+print "Sustantivo más cercano: '{}'".format(closest_noun['text']['content'])
+
+producto = closest_noun['text']['content']
+
+# leer base de productos
+def unicode_csv_reader(utf8_data, dialect=csv.excel, **kwargs):
+    as_list = []
+    csv_reader = csv.reader(utf8_data, dialect=dialect, **kwargs)
+    for row in csv_reader:
+        as_list.append([unicode(cell, 'utf-8') for cell in row])
+    return as_list
+
+data = unicode_csv_reader(open('../sharedFiles/Web scraping 15k.csv'))
+
+header = data[0]
+data = data[1:]
+
+def n_categorias(first_row, n=0):
+    if ('Categoria '+str(n+1)) in first_row:
+        return n_categorias(first_row, n+1)
+    else:
+        return n
+
+n_categorias = n_categorias(header)
+
+# quitar productos sin match de pasillo
+filtered = [row for row in data if "Sin info" not in row]
+
+# dejar solo donde calza el producto
+filtered = [row for row in filtered if producto in row[header.index('Nombre')]]
+print "Productos encontrados: {} {}".format(len(filtered), producto)
+
+pasillos = set([row[header.index('pasillo')] for row in filtered])
+if len(pasillos) > 1:
+    # buscar donde bifurcan categorias
+    for i in range(categoria_inicial, n_categorias):
+        index_categoria = header.index('Categoria '+str(i))
+        categorias = set([row[index_categoria] for row in filtered])
+        if len(categorias) > 1:
+            # filtrar resultados
+            if eleccion == -1:
+                print "Indiferente", categoria_inicial
+                break
+            else:
+                filtered = [row for row in filtered if list(categorias)[eleccion-1] == row[index_categoria]]
+                break
+        else:
+            continue
+    # si salgo es que no puedo seguir filtrando por categorias y quedan pasillos distintos
+    print "No se puede seguir filtrando por categorias"
+
+if filtered:
+    pasillos = list(set([row[header.index('pasillo')] for row in filtered]))
+    if len(pasillos) > 1:
+        seguir_filtrando = True
+        print "Tenemos productos en distintos pasillos: {}".format(','.join(byteify(pasillos)))
+    else:
+        seguir_filtrando = False
+        print "Ubicación del producto: {}".format(pasillos[0])
+
+output = {
+    'data': filtered,
+    'seguir_filtrando': seguir_filtrando
+}
+
 output = json.dumps(byteify(output), ensure_ascii=False)
 
+print ""
 print output
 response.write(output)
 response.close()
