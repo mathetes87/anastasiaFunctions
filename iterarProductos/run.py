@@ -4,8 +4,6 @@ import json, csv
 
 # inputs y outputs
 try:
-    post_data = json.loads(open(os.environ['req']).read())
-except:
     import requests
     query = "donde puedo encontrar una parrilla"
 
@@ -25,6 +23,8 @@ except:
         "eleccion": 2,
         "response": json.loads(r.text)
     }
+except:
+    post_data = json.loads(open(os.environ['req']).read())
 
 # datos obtenidos de llamada
 categoria_inicial = post_data['categoria']
