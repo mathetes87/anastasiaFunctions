@@ -5,7 +5,7 @@ import json, csv, os
 # inputs y outputs
 try:
     import requests
-    query = "donde puedo encontrar una parrilla"
+    query = "donde puedo encontrar parrilla"
 
     url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
     params = {
@@ -77,8 +77,8 @@ def byteify(input):
 root = find_tokens_by_label_or_tag("label", identifier='ROOT')[0]
 closest_noun, _ = closest_token(root, find_tokens_by_label_or_tag("tag", identifier='NOUN'))
         
-print "Raíz de la oración: '{}'".format(root['text']['content'])
-print "Sustantivo más cercano: '{}'".format(closest_noun['text']['content'])
+print "Raíz de la oración: '{}'".format(repr(root['text']['content'].decode('utf-8')))
+print "Sustantivo más cercano: '{}'".format(repr(closest_noun['text']['content']))
 
 producto = closest_noun['text']['content']
 
@@ -104,11 +104,24 @@ def n_categorias(first_row, n=0):
 n_categorias = n_categorias(header)
 
 # quitar productos sin match de pasillo
-filtered = [row for row in data if "Sin info" not in row]
+filtered = [row for row in data if "Sin info" not in row[-1]]
 
 # dejar solo donde calza el producto
-filtered = [row for row in filtered if producto in row[header.index('Nombre')]]
-print "Productos encontrados: {} {}".format(len(filtered), producto)
+filtered = [row for row in filtered if producto in row[header.index('Nombre')].lower()]
+
+# llenar categorias que estan vacias con el mas cercano hacia izquierda
+for row in filtered:
+    if row[n_categorias-1] == u'':
+        # buscar primera columna no vacia desde derecha
+        for i in range(n_categorias-1, -1, -1):
+            if row[i] != '':
+                # llenar todas las columnas vacias
+                for j in range(i, n_categorias):
+                    row[j] = row[i]
+                break
+
+
+print "Productos encontrados: {} {}".format(len(filtered), repr(producto))
 
 if filtered:
     pasillos = list(set([row[header.index('pasillo')] for row in filtered]))
@@ -118,10 +131,23 @@ if filtered:
     else:
         seguir_filtrando = False
         print "Ubicación del producto: {}".format(pasillos[0])
+else:
+    seguir_filtrando = False
+
+categorias_a_usuario = []
+categoria_actual = []
+for i in range(1, n_categorias):
+    categorias = list(set([row[i] for row in filtered]))
+    if len(categorias) > 1:
+        categorias_a_usuario = categorias
+        categoria_actual = i
+        break
 
 output = {
-    'head': header,
+    'header': header,
     'data': filtered,
+    'categorias_a_usuario': categorias_a_usuario,
+    'categoria_actual': categoria_actual,
     'seguir_filtrando': seguir_filtrando
 }
 
