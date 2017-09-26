@@ -61,11 +61,11 @@ print_sans(data)
 # ------------------------------------------
 # 1. Filtrar data según elección del usuario
 # ------------------------------------------
-if eleccion == len(categorias_a_usuario):
+if eleccion+1 == len(categorias_a_usuario):
     # elige la ultima (indiferente/no sabe), data se mantiene igual
     pass
 else:
-    data = [row for row in data if categorias_a_usuario[eleccion-1] == row[header.index('Categoria '+str(categoria_actual))]]
+    data = [row for row in data if categorias_a_usuario[eleccion] == row[header.index('Categoria '+str(categoria_actual))]]
 
 # ---------------------------------------------------
 # 2. Obtener categorias a mostrar como opciones al usuario

@@ -5,7 +5,7 @@ import json, csv, os
 # inputs y outputs
 try:
     import requests
-    query = "donde puedo encontrar parrilla"
+    query = "Electricidad. que pasillo?"
 
     url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
     params = {
@@ -26,6 +26,7 @@ except:
 
 # datos obtenidos de llamada
 tokens = post_data['response']['tokens']
+tags_list = [token['partOfSpeech']['tag'] for token in tokens]
 
 try:
     response = open(os.environ['res'], 'w')
@@ -74,13 +75,25 @@ def byteify(input):
     else:
         return input
 
+def closest_pattern(pattern):
+    
+
 root = find_tokens_by_label_or_tag("label", identifier='ROOT')[0]
 closest_noun, _ = closest_token(root, find_tokens_by_label_or_tag("tag", identifier='NOUN'))
+root_is_noun = (root['partOfSpeech']['tag'] == 'NOUN')
+noun_adp_noun = ("NOUN,ADP,NOUN" in ",".join(tags_list))
+
         
 print "Raíz de la oración: '{}'".format(repr(root['text']['content'].decode('utf-8')))
 print "Sustantivo más cercano: '{}'".format(repr(closest_noun['text']['content']))
 
-producto = closest_noun['text']['content']
+#--------------------------------------------------------------------------------
+# Con toda la información sintáctica, decidir cuál es el producto y sus atributos
+#--------------------------------------------------------------------------------
+if root_is_noun:
+    producto = root['text']['content']
+else:
+    producto = closest_noun['text']['content']
 
 # leer base de productos
 def unicode_csv_reader(utf8_data, dialect=csv.excel, **kwargs):
