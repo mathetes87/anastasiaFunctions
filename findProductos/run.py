@@ -75,8 +75,8 @@ def byteify(input):
     else:
         return input
 
-def closest_pattern(pattern):
-    
+#def closest_pattern(pattern):
+
 
 root = find_tokens_by_label_or_tag("label", identifier='ROOT')[0]
 closest_noun, _ = closest_token(root, find_tokens_by_label_or_tag("tag", identifier='NOUN'))
