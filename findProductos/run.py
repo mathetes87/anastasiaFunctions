@@ -142,6 +142,7 @@ for i in range(1, n_categorias):
         categorias_a_usuario = categorias
         categoria_actual = i
         break
+categorias_a_usuario.extend(["No sé/Indiferente"])
 
 output = {
     'header': header,
