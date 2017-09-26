@@ -5,7 +5,7 @@ import json, csv, os
 # inputs y outputs
 try:
     import requests
-    query = "Electricidad. que pasillo?"
+    query = "en que pasillo estan los martillos"
 
     url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
     params = {
@@ -59,6 +59,7 @@ def closest_token(current_token, candidates):
     closest = {'token': None, 'distance': 2112}
     for candidate in candidates:
         this_distance = distance_to_token(current_token, candidate)
+        print candidate['text']['content'], this_distance
         if this_distance < closest['distance']:
             closest['distance'] = this_distance
             closest['token'] = candidate
@@ -75,25 +76,61 @@ def byteify(input):
     else:
         return input
 
-#def closest_pattern(pattern):
+def search_pattern(pattern, label_or_tag):
+    if label_or_tag == "tag":
+        if ",".join(pattern) in ",".join(tags_list):
+            matched_tokens = []
+            for i, tagi in enumerate(tags_list):
+                for j, tagj in enumerate(pattern):
+                    try:
+                        if tags_list[i+j] == tagj:
+                            matched_tokens.append(i+j)
+                            if len(matched_tokens) == len(pattern):
+                                return matched_tokens
+                            else:
+                                continue
+                        else:
+                            matched_tokens = []
+                            break
+                    except:
+                        continue
+            return None
+        else:
+            return None
+    else:
+        pass
 
 
 root = find_tokens_by_label_or_tag("label", identifier='ROOT')[0]
 closest_noun, _ = closest_token(root, find_tokens_by_label_or_tag("tag", identifier='NOUN'))
 root_is_noun = (root['partOfSpeech']['tag'] == 'NOUN')
-noun_adp_noun = ("NOUN,ADP,NOUN" in ",".join(tags_list))
 
-        
-print "Raíz de la oración: '{}'".format(repr(root['text']['content'].decode('utf-8')))
-print "Sustantivo más cercano: '{}'".format(repr(closest_noun['text']['content']))
+pattern_indexes = search_pattern(["NOUN","ADP","NOUN"], "tag")
+first_noun = pattern_indexes[0] if pattern_indexes else None
+second_noun = pattern_indexes[2] if pattern_indexes else None
 
 #--------------------------------------------------------------------------------
 # Con toda la información sintáctica, decidir cuál es el producto y sus atributos
 #--------------------------------------------------------------------------------
+keywords = []
 if root_is_noun:
     producto = root['text']['content']
 else:
     producto = closest_noun['text']['content']
+
+if first_noun and tokens[first_noun] is not closest_noun:
+    keywords.append(tokens[first_noun]['text']['content']) 
+
+if second_noun:
+    keywords.append(tokens[second_noun]['text']['content'])
+    # buscar hasta tercer nivel
+    pattern_indexes = search_pattern(["NOUN","ADP","NOUN","ADP","NOUN"], "tag")
+    third_noun = pattern_indexes[4] if pattern_indexes else None
+    if third_noun:
+        keywords.append(tokens[third_noun]['text']['content'])
+
+print "Producto buscado: '{}'".format(repr(closest_noun['text']['content']))
+print "Palabras clave adicionales de la búsqueda: {}".format(repr(",".join(keywords)))
 
 # leer base de productos
 def unicode_csv_reader(utf8_data, dialect=csv.excel, **kwargs):
@@ -117,10 +154,18 @@ def n_categorias(first_row, n=0):
 n_categorias = n_categorias(header)
 
 # quitar productos sin match de pasillo
-filtered = [row for row in data if "Sin info" not in row[-1]]
+raw_data = [row for row in data if "Sin info" not in row[-1]]
 
 # dejar solo donde calza el producto
-filtered = [row for row in filtered if producto in row[header.index('Nombre')].lower()]
+filtered = [row for row in raw_data if producto in row[header.index('Nombre')].lower()]
+
+# si no encontré nada, intentar con el lemma
+if len(filtered) == 0:
+    try:
+        closest_noun_lemma = closest_noun['lemma']
+        filtered = [row for row in raw_data if closest_noun_lemma in row[header.index('Nombre')].lower()]
+    except:
+        pass
 
 # llenar categorias que estan vacias con el mas cercano hacia izquierda
 for row in filtered:
@@ -133,8 +178,7 @@ for row in filtered:
                     row[j] = row[i]
                 break
 
-
-print "Productos encontrados: {} {}".format(len(filtered), repr(producto))
+print "\nProductos encontrados: {} {}".format(len(filtered), repr(producto))
 
 if filtered:
     pasillos = list(set([row[header.index('pasillo')] for row in filtered]))
@@ -148,21 +192,23 @@ else:
     seguir_filtrando = False
 
 categorias_a_usuario = []
-categoria_actual = []
+categoria_actual = 0
 for i in range(1, n_categorias):
     categorias = list(set([row[i] for row in filtered]))
     if len(categorias) > 1:
         categorias_a_usuario = categorias
         categoria_actual = i
         break
+
 categorias_a_usuario.extend(["No sé/Indiferente"])
 
 output = {
     'header': header,
     'data': filtered,
     'categorias_a_usuario': categorias_a_usuario,
-    'categoria_actual': categoria_actual,
-    'seguir_filtrando': seguir_filtrando
+    'categoria_actual': categoria_actual+1,
+    'seguir_filtrando': seguir_filtrando,
+    'keywords': keywords
 }
 
 output = json.dumps(byteify(output), ensure_ascii=False)
