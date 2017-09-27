@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 import json, csv, os, sys, os.path
-
-try:
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'myvenv/Lib/site-packages')))
-except:
-    pass
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'myvenv/Lib/site-packages')))
+print os.path.dirname( __file__ )
 import requests
+
 # inputs y outputs
 try:
     post_data = json.loads(open(os.environ['req']).read())  
