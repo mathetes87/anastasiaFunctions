@@ -1,71 +1,28 @@
 #!/usr/bin/env python
 # coding: utf-8
-import json, csv, requests
+import json, csv, os
 
 # inputs y outputs
 try:
-    post_data = json.loads(open(os.environ['req']).read())
+    from tabulate import tabulate
+    post_data = json.loads(json.dumps({
+        "response": {
+            "header": ["Categoria 1", "Categoria 2", "Categoria 3", "Categoria 4", "Categoria 5", "Categoria 6", "Categoria 7", "Imagen Url", "url", "Marca", "Nombre", "Precio", "Sku", "pasillo"],
+            "categoria_actual": 2,
+            "categorias_a_usuario": ["Preparación y reparación de superficies", "Herramientas", "No sé/Indiferente"],
+            "data": [["Ferretería", "Herramientas", "Herramientas por Especialidad", "Herramientas para instalación de pisos", "Protectores de piso y ropa", "Protectores de piso y ropa", "Protectores de piso y ropa", "http://sodimac.scene7.com/is/image/SodimacCL/161918?$lista175$", "http://www.sodimac.cl/sodimac-cl/category/cat2960096/Protectores-de-piso-y-ropa?No=16&Nrpp=16", "Atlas", "Balde para Pintura 10 litros", "6190", "161918", "Pasillo 70 - Rack 70"], ["Pinturas", "Preparación y reparación de superficies", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "http://sodimac.scene7.com/is/image/SodimacCL/97527?$lista175$", "http://www.sodimac.cl/sodimac-cl/category/cat4850043/Antioxido-y-Convertidores-de-oxido", "Sipa", "Pintura Antióxido Maestranza 1/4 galón Negro", "6190", "97527", "Pasillo 28 - Rack 28"], ["Pinturas", "Preparación y reparación de superficies", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "http://sodimac.scene7.com/is/image/SodimacCL/181625?$lista175$", "http://www.sodimac.cl/sodimac-cl/category/cat4850043/Antioxido-y-Convertidores-de-oxido", "Sipa", "Pintura Antióxido Maestranza 1/4 galón Rojo", "6190", "181625", "Pasillo 28 - Rack 28"], ["Pinturas", "Preparación y reparación de superficies", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "http://sodimac.scene7.com/is/image/SodimacCL/961655?$lista175$", "http://www.sodimac.cl/sodimac-cl/category/cat4850043/Antioxido-y-Convertidores-de-oxido", "Sipa", "Pintura Antióxido Maestranza 1 galón Rojo", "14490", "961655", "Pasillo 28 - Rack 28"], ["Pinturas", "Preparación y reparación de superficies", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "http://sodimac.scene7.com/is/image/SodimacCL/181102?$lista175$", "http://www.sodimac.cl/sodimac-cl/category/cat4850043/Antioxido-y-Convertidores-de-oxido", "Sipa", "Pintura Antióxido Maestranza 1 galón Gris", "14490", "181102", "Pasillo 28 - Rack 28"], ["Pinturas", "Preparación y reparación de superficies", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "Antióxido y Convertidores de óxido", "http://sodimac.scene7.com/is/image/SodimacCL/225282?$lista175$", "http://www.sodimac.cl/sodimac-cl/category/cat4850043/Antioxido-y-Convertidores-de-oxido", "Sipa", "Pintura Antióxido Maestranza 1 galón Negro", "14490", "225282", "Pasillo 28 - Rack 28"]]
+        },
+        "eleccion": 0 
+    }))
 except:
-    query = "donde puedo encontrar una parrilla"
-
-    url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
-    params = {
-        "document": 
-            {
-                "content": query,
-                "language": "es",
-                "type": "PLAIN_TEXT"
-            }
-    }
-
-    r = requests.post(url, data=json.dumps(params))
-    post_data = {
-        "categoria": 1,
-        "eleccion": 2,
-        "response": json.loads(r.text)
-    }
-
-# datos obtenidos de llamada
-categoria_inicial = post_data['categoria']
-eleccion = post_data['eleccion']
-tokens = post_data['response']['tokens']
+    post_data = json.loads(open(os.environ['req']).read())
 
 try:
     response = open(os.environ['res'], 'w')
 except:
     response = open('dummy_output.txt', 'w')
 
-# funciones auxiliares para recorrer árbol sintáctico de la oración
-def distance_to_token(current_token, target_token, distance=0):
-    new_token = tokens[current_token['dependencyEdge']['headTokenIndex']]
-    if current_token == target_token:
-        # si encontré el token que buscaba
-        return distance
-    elif new_token == current_token:
-        # si llegué a la raiz se vuelve circular
-        return distance + 1
-    else:
-        distance += 1
-        return distance_to_token(new_token, target_token, distance)
-    
-def find_tokens_by_label_or_tag(label_or_tag, identifier):
-    tokens_found = []
-    for i, token in enumerate(tokens):
-        tag_match = (label_or_tag == "label" and token['dependencyEdge']['label'] == identifier)
-        label_match = (label_or_tag == "tag" and token['partOfSpeech']['tag'] == identifier)
-        if label_match or tag_match:
-            tokens_found.append(token)            
-    return tokens_found
-
-def closest_token(current_token, candidates):
-    closest = {'token': None, 'distance': 2112}
-    for candidate in candidates:
-        this_distance = distance_to_token(current_token, candidate)
-        if this_distance < closest['distance']:
-            closest['distance'] = this_distance
-            closest['token'] = candidate
-    return closest['token'], closest['distance']
-
+# pasar objetos a string utf-8
 def byteify(input):
     if isinstance(input, dict):
         return {byteify(key): byteify(value)
@@ -77,78 +34,91 @@ def byteify(input):
     else:
         return input
 
-root = find_tokens_by_label_or_tag("label", identifier='ROOT')[0]
-closest_noun, _ = closest_token(root, find_tokens_by_label_or_tag("tag", identifier='NOUN'))
-        
-print "Raíz de la oración: '{}'".format(root['text']['content'])
-print "Sustantivo más cercano: '{}'".format(closest_noun['text']['content'])
-
-producto = closest_noun['text']['content']
-
-# leer base de productos
-def unicode_csv_reader(utf8_data, dialect=csv.excel, **kwargs):
-    as_list = []
-    csv_reader = csv.reader(utf8_data, dialect=dialect, **kwargs)
-    for row in csv_reader:
-        as_list.append([unicode(cell, 'utf-8') for cell in row])
-    return as_list
-
-data = unicode_csv_reader(open('../sharedFiles/Web scraping 15k.csv'))
-
-header = data[0]
-data = data[1:]
-
 def n_categorias(first_row, n=0):
     if ('Categoria '+str(n+1)) in first_row:
         return n_categorias(first_row, n+1)
     else:
         return n
 
+def print_sans(l):
+    pop = [6,7, 8, 9, 11, 12]
+    data_sans = [[col for i,col in enumerate(row) if i not in pop] for row in l]
+    header_sans = [col for i,col in enumerate(header) if i not in pop]
+    try:
+        print tabulate(data_sans, headers=header_sans)
+    except:
+        pass
+
+# datos obtenidos de llamada
+header = post_data['response']['header']
+categoria_actual = post_data['response']['categoria_actual']
+categorias_a_usuario = post_data['response']['categorias_a_usuario']
+eleccion = post_data['eleccion']
+data = post_data['response']['data']
+
 n_categorias = n_categorias(header)
 
-# quitar productos sin match de pasillo
-filtered = [row for row in data if "Sin info" not in row]
+print_sans(data) 
 
-# dejar solo donde calza el producto
-filtered = [row for row in filtered if producto in row[header.index('Nombre')]]
-print "Productos encontrados: {} {}".format(len(filtered), producto)
+# ------------------------------------------
+# 1. Filtrar data según elección del usuario
+# ------------------------------------------
+if eleccion+1 == len(categorias_a_usuario):
+    # elige la ultima (indiferente/no sabe), data se mantiene igual
+    pass
+else:
+    data = [row for row in data if categorias_a_usuario[eleccion] == row[header.index('Categoria '+str(categoria_actual))]]
 
-pasillos = set([row[header.index('pasillo')] for row in filtered])
-if len(pasillos) > 1:
-    # buscar donde bifurcan categorias
-    for i in range(categoria_inicial, n_categorias):
-        index_categoria = header.index('Categoria '+str(i))
-        categorias = set([row[index_categoria] for row in filtered])
-        if len(categorias) > 1:
-            # filtrar resultados
-            if eleccion == -1:
-                print "Indiferente", categoria_inicial
-                break
-            else:
-                filtered = [row for row in filtered if list(categorias)[eleccion-1] == row[index_categoria]]
-                break
-        else:
-            continue
-    # si salgo es que no puedo seguir filtrando por categorias y quedan pasillos distintos
-    print "No se puede seguir filtrando por categorias"
+# ---------------------------------------------------
+# 2. Obtener categorias a mostrar como opciones al usuario
+# ---------------------------------------------------
+categoria_actual += 1
 
-if filtered:
-    pasillos = list(set([row[header.index('pasillo')] for row in filtered]))
-    if len(pasillos) > 1:
+# buscar donde bifurcan categorias
+seguir_filtrando = False
+for i in range(categoria_actual, n_categorias):
+    categoria_index = header.index('Categoria '+str(i))
+    categorias = set([row[categoria_index] for row in data])
+    if len(categorias) > 1:        
+        categorias_a_usuario = list(set([row[categoria_index] for row in data if row[categoria_index] != '']))
         seguir_filtrando = True
-        print "Tenemos productos en distintos pasillos: {}".format(','.join(byteify(pasillos)))
+        break
     else:
-        seguir_filtrando = False
-        print "Ubicación del producto: {}".format(pasillos[0])
+        continue
+
+# -----------------------------------------------------
+# 3. Si existe una única ubicación, no seguir filtrando
+# -----------------------------------------------------
+pasillos = list(set([row[header.index('pasillo')] for row in data]))
+if len(pasillos) == 1:
+    seguir_filtrando = False
+
+# --------------------------
+# 4. Armar output a retornar
+# --------------------------
+if not seguir_filtrando:
+    categorias_a_usuario = []
+
+print ""
+print_sans(data)
 
 output = {
-    'data': filtered,
-    'seguir_filtrando': seguir_filtrando
+    'data': data,
+    'header': header,
+    'seguir_filtrando': seguir_filtrando,
+    'categoria_actual': categoria_actual,
+    'categorias_a_usuario': categorias_a_usuario,
+    'ubicaciones': pasillos
 }
 
+# -----------------
+# 5. Retornar datos
+# -----------------
 output = json.dumps(byteify(output), ensure_ascii=False)
 
 print ""
+#print_sans(data)
+#print '["'+'","'.join(categorias_a_usuario)+'"]', seguir_filtrando, pasillos
 print output
 response.write(output)
 response.close()
