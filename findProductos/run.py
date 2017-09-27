@@ -4,7 +4,7 @@ import json, csv, os, sys, os.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'myvenv/Lib/site-packages')))
 import requests, logging
 # turn down requests log verbosity
-logging.getLogger('requests').setLevel(logging.CRITICAL)
+#logging.getLogger('requests').setLevel(logging.CRITICAL)
 
 # inputs y outputs
 try:
@@ -24,7 +24,7 @@ params = {
         }
 }
 
-r = requests.post(url, data=json.dumps(params))
+r = requests.post(url, data=json.dumps(params))#, verify=False)
 
 # datos obtenidos de llamada
 tokens = json.loads(r.text)['tokens']
@@ -130,8 +130,8 @@ if second_noun:
     if third_noun:
         keywords.append(tokens[third_noun]['text']['content'])
 
-print "Producto buscado: '{}'".format(repr(closest_noun['text']['content']))
-print "Palabras clave adicionales de la búsqueda: {}".format(repr(",".join(keywords)))
+print("Producto buscado: '{}'".format(repr(closest_noun['text']['content'])))
+print("Palabras clave adicionales de la búsqueda: {}".format(repr(",".join(keywords))))
 
 # leer base de productos
 def unicode_csv_reader(utf8_data, dialect=csv.excel, **kwargs):
@@ -179,16 +179,16 @@ for row in filtered:
                     row[j] = row[i]
                 break
 
-print "\nProductos encontrados: {} {}".format(len(filtered), repr(producto))
+print("\nProductos encontrados: {} {}".format(len(filtered), repr(producto)))
 
 if filtered:
     pasillos = list(set([row[header.index('pasillo')] for row in filtered]))
     if len(pasillos) > 1:
         seguir_filtrando = True
-        print "Tenemos productos en distintos pasillos: {}".format(';'.join(byteify(pasillos)))
+        print("Tenemos productos en distintos pasillos: {}".format(';'.join(byteify(pasillos))))
     else:
         seguir_filtrando = False
-        print "Ubicación del producto: {}".format(pasillos[0])
+        print("Ubicación del producto: {}".format(pasillos[0]))
 else:
     seguir_filtrando = False
 
@@ -214,7 +214,7 @@ output = {
 
 output = json.dumps(byteify(output), ensure_ascii=False)
 
-print ""
-print output
+print("")
+print(output)
 response.write(output)
 response.close()
