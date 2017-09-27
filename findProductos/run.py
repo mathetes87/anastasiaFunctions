@@ -4,7 +4,7 @@ import json, csv, os, sys, os.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'myvenv/Lib/site-packages')))
 import requests, logging
 # turn down requests log verbosity
-#logging.getLogger('requests').setLevel(logging.CRITICAL)
+logging.getLogger('requests').setLevel(logging.CRITICAL)
 
 # inputs y outputs
 try:
@@ -24,7 +24,7 @@ params = {
         }
 }
 
-r = requests.post(url, data=json.dumps(params))#, verify=False)
+r = requests.post(url, data=json.dumps(params), verify=False)
 
 # datos obtenidos de llamada
 tokens = json.loads(r.text)['tokens']
