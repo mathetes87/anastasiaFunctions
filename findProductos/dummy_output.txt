@@ -1,1 +1,0 @@
-{"seguir_filtrando": false, "header": ["Categoria 1", "Categoria 2", "Categoria 3", "Categoria 4", "Categoria 5", "Categoria 6", "Categoria 7", "Imagen Url", "url", "Marca", "Nombre", "Precio", "Sku", "pasillo"], "categorias_a_usuario": ["No sé/Indiferente"], "keywords": ["goma"], "data": [], "categoria_actual": 1}
