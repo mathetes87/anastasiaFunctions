@@ -2,7 +2,6 @@
 # coding: utf-8
 import json, csv, os, sys, os.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'myvenv/Lib/site-packages')))
-print os.path.dirname( __file__ )
 import requests
 
 # inputs y outputs
