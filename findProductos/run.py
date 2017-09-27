@@ -1,31 +1,34 @@
 #!/usr/bin/env python
 # coding: utf-8
-import json, csv, os
+import json, csv, os, sys, os.path
 
+try:
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'myvenv/Lib/site-packages')))
+except:
+    pass
+import requests
 # inputs y outputs
 try:
-    import requests
-    query = "en que pasillo estan los martillos de goma"
-
-    url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
-    params = {
-        "document": 
-            {
-                "content": query,
-                "language": "es",
-                "type": "PLAIN_TEXT"
-            }
-    }
-
-    r = requests.post(url, data=json.dumps(params))
-    post_data = {
-        "response": json.loads(r.text)
-    }
+    post_data = json.loads(open(os.environ['req']).read())  
 except:
-    post_data = json.loads(open(os.environ['req']).read())
+    post_data = {
+        "query": "en que pasillo estan las parrillas a gas"
+    }
+
+url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
+params = {
+    "document": 
+        {
+            "content": post_data['query'],
+            "language": "es",
+            "type": "PLAIN_TEXT"
+        }
+}
+
+r = requests.post(url, data=json.dumps(params))
 
 # datos obtenidos de llamada
-tokens = post_data['response']['tokens']
+tokens = json.loads(r.text)['tokens']
 tags_list = [token['partOfSpeech']['tag'] for token in tokens]
 
 try:
