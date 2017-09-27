@@ -5,7 +5,7 @@ import json, csv, os
 # inputs y outputs
 try:
     import requests
-    query = "en que pasillo estan los martillos"
+    query = "en que pasillo estan los martillos de goma"
 
     url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
     params = {
@@ -49,8 +49,8 @@ def distance_to_token(current_token, target_token, distance=0):
 def find_tokens_by_label_or_tag(label_or_tag, identifier):
     tokens_found = []
     for i, token in enumerate(tokens):
-        tag_match = (label_or_tag == "label" and token['dependencyEdge']['label'] == identifier)
-        label_match = (label_or_tag == "tag" and token['partOfSpeech']['tag'] == identifier)
+        label_match = (label_or_tag == "label" and token['dependencyEdge']['label'] == identifier)
+        tag_match = (label_or_tag == "tag" and token['partOfSpeech']['tag'] == identifier)
         if label_match or tag_match:
             tokens_found.append(token)            
     return tokens_found
@@ -58,8 +58,7 @@ def find_tokens_by_label_or_tag(label_or_tag, identifier):
 def closest_token(current_token, candidates):
     closest = {'token': None, 'distance': 2112}
     for candidate in candidates:
-        this_distance = distance_to_token(current_token, candidate)
-        print candidate['text']['content'], this_distance
+        this_distance = distance_to_token(candidate, current_token)
         if this_distance < closest['distance']:
             closest['distance'] = this_distance
             closest['token'] = candidate
