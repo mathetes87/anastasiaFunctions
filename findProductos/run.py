@@ -2,7 +2,9 @@
 # coding: utf-8
 import json, csv, os, sys, os.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname( __file__ ), 'myvenv/Lib/site-packages')))
-import requests
+import requests, logging
+# turn down requests log verbosity
+logging.getLogger('requests').setLevel(logging.CRITICAL)
 
 # inputs y outputs
 try:
