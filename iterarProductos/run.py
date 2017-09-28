@@ -54,8 +54,6 @@ mensaje_final_parcial = post_data['response']['mensaje_final']
 
 n_categorias = n_categorias(header)
 
-print_sans(data)
-
 # ------------------------------------------
 # 1. Filtrar data según elección del usuario
 # ------------------------------------------
@@ -120,6 +118,7 @@ output = {
 output = json.dumps(byteify(output), ensure_ascii=False)
 
 #print '["'+'","'.join(categorias_a_usuario)+'"]', seguir_filtrando, pasillos
-print output
+#print output
+print mensaje_final.encode('utf-8')
 response.write(output)
 response.close()
