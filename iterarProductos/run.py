@@ -97,7 +97,8 @@ if not seguir_filtrando:
     categorias_a_usuario = []
     mensaje_final = mensaje_final_parcial + '; '.join(pasillos)
 else:
-   categorias_a_usuario.extend(["Subcategorías"]) 
+   categorias_a_usuario.extend(["Subcategorías"])
+   mensaje_final = mensaje_final_parcial
 
 print ""
 print_sans(data)
