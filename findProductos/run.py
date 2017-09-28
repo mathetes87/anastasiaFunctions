@@ -168,7 +168,7 @@ header = data[0]
 data = data[1:]
 
 def print_sans(data):
-    pop = [6,7, 8, 9, 11, 12]
+    pop = [5, 6, 7, 8, 9, 11, 12]
     data_sans = [[col for i,col in enumerate(row) if i not in pop] for row in data]
     header_sans = [col for i,col in enumerate(header) if i not in pop]
     try:
@@ -273,7 +273,7 @@ else:
 output = {
     'header': header,
     'data': filtered,
-    'categorias_a_usuario': categorias_a_usuario,
+    'categorias_a_usuario': [categoria.title() for categoria in categorias_a_usuario],
     'categoria_actual': categoria_actual+1,
     'seguir_filtrando': seguir_filtrando,
     'mensaje_final': mensaje_final
