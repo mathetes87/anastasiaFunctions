@@ -11,7 +11,8 @@ try:
     }))
 except:
     post_data = json.loads(open(os.environ['req']).read())
-    print post_data
+
+print post_data
 
 try:
     response = open(os.environ['res'], 'w')
@@ -122,7 +123,7 @@ output = {
 output = json.dumps(byteify(output), ensure_ascii=False)
 
 #print '["'+'","'.join(categorias_a_usuario)+'"]', seguir_filtrando, pasillos
-print output
+#print output
 #print mensaje_final.encode('utf-8')
 response.write(output)
 response.close()
