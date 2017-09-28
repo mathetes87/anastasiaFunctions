@@ -308,7 +308,7 @@ if producto:
     else:
         mensaje_final = "Podrás encontrar {} {} que buscas en el ".format(articulo_definido, sustantivo.encode('utf-8'))
 else:
-    mensaje_final = "Porfa escribe en español más formal ;)"
+    mensaje_final = "Podrás encontrar {} {} que buscas en el ".format(articulo_definido, sustantivo.encode('utf-8'))
 
 output = {
     'header': header,
