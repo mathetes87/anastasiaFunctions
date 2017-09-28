@@ -98,10 +98,9 @@ if not seguir_filtrando:
 else:
    categorias_a_usuario.extend(["Subcategorías"])
 
+mesaje_final = "Problema para encontrar el pasillo :("
 if len(pasillos) > 0:
     mensaje_final = mensaje_final_parcial + '; '.join(pasillos)
-else:
-    mesaje_final = "Problema para encontrar el pasillo :("
 
 print ""
 print_sans(data)
