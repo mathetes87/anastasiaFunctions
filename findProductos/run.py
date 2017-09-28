@@ -6,7 +6,7 @@ import json, csv, os, re
 try:
     import requests
     from tabulate import tabulate
-    query = "donde puedo encontrar sillas de jardín"
+    query = "donde encuentro una lámpara de aluminio"
 
     url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
     params = {
@@ -112,6 +112,29 @@ def search_pattern(pattern, label_or_tag):
     else:
         pass
 
+def search_pattern2(pattern, label_or_tag, current_pattern_index, current_token_index=0, start_token_recur=0, found_tokens=[]):
+    # busca el patrón en orden inverso, porque la cadena de punteros en los tokens indican comienzo de flecha
+    if label_or_tag == "tag":
+        if len(pattern) == len(found_tokens):
+            return found_tokens
+        elif len(tokens) == start_token_recur:
+            return []
+        else:
+            print pattern[current_pattern_index], tokens[current_token_index]['partOfSpeech']['tag']
+            if current_token_index == tokens[current_token_index]['dependencyEdge']['headTokenIndex']:
+                # si se vuelve circular, seguir con siguiente token
+                return search_pattern2(pattern, label_or_tag, len(pattern)-1, current_token_index=start_token_recur+1, start_token_recur=start_token_recur+1, found_tokens=[])
+            elif pattern[current_pattern_index] == tokens[current_token_index]['partOfSpeech']['tag']:
+                # encuentra match, seguir con pattern y token siguientes
+                next_pattern_index = current_pattern_index - 1
+                next_token_index = tokens[current_token_index]['dependencyEdge']['headTokenIndex']
+                found_tokens.append(tokens[current_token_index])
+                return search_pattern2(pattern, label_or_tag, next_pattern_index, current_token_index=next_token_index, start_token_recur=start_token_recur, found_tokens=found_tokens)
+            else:
+                # no hizo match, seguir con siguiente token y reiniciar pattern
+                return search_pattern2(pattern, label_or_tag, len(pattern)-1, current_token_index=start_token_recur+1, start_token_recur=start_token_recur+1, found_tokens=[])
+
+
 def unicode_csv_reader(utf8_data, dialect=csv.excel, **kwargs):
     as_list = []
     csv_reader = csv.reader(utf8_data, dialect=dialect, **kwargs)
@@ -132,6 +155,7 @@ root_is_noun = (root['partOfSpeech']['tag'] == 'NOUN')
 pattern_indexes = search_pattern(["NOUN","ADP","NOUN"], "tag")
 first_noun = pattern_indexes[0] if pattern_indexes else None
 second_noun = pattern_indexes[2] if pattern_indexes else None
+
 
 #--------------------------------------------------------------------------------
 # Con toda la información sintáctica, decidir cuál es el producto y sus atributos
@@ -227,14 +251,15 @@ if filtered:
         print "Tenemos productos en distintos pasillos: {}".format(';'.join(byteify(pasillos)))
     else:
         seguir_filtrando = False
-        print "Ubicación del producto: {}".format(pasillos[0])
+        print "Ubicación del producto: {}".format(pasillos[0].encode('utf-8'))
 else:
+    pasillos = []
     seguir_filtrando = False
 
 categorias_a_usuario = []
-categoria_actual = 0
+categoria_actual = 1
 for i in range(1, n_categorias):
-    categorias = list(set([row[i] for row in filtered]))
+    categorias = list(set([row[header.index('Categoria '+str(i))] for row in filtered]))
     if len(categorias) > 1:
         categorias_a_usuario = categorias
         categoria_actual = i
@@ -243,7 +268,7 @@ for i in range(1, n_categorias):
 if not seguir_filtrando:
     categorias_a_usuario = []
 else:
-   categorias_a_usuario.extend(["Subcategorías"])
+    categorias_a_usuario.extend(["Subcategorías"])
 
 # en base a género y número del producto, preparar 'artículo definido' de la oración
 sustantivo = producto['text']['content']
@@ -257,31 +282,34 @@ else:
         articulo_definido = 'el'
     else:
         articulo_definido = 'los'
-if third_noun:
-    palabras = [tokens[index]['text']['content'] for index in search_pattern(["NOUN","ADP","NOUN","ADP","NOUN"], "tag")]
-    sustantivo = ' '.join(palabras)
-elif second_noun:
-    palabras = [tokens[index]['text']['content'] for index in search_pattern(["NOUN","ADP","NOUN"], "tag")]
-    sustantivo = ' '.join(palabras)
+try:
+    if third_noun:
+        palabras = [tokens[index]['text']['content'] for index in search_pattern(["NOUN","ADP","NOUN","ADP","NOUN"], "tag")]
+        sustantivo = ' '.join(palabras)
+    elif second_noun:
+        palabras = [tokens[index]['text']['content'] for index in search_pattern(["NOUN","ADP","NOUN"], "tag")]
+        sustantivo = ' '.join(palabras)
+except:
+    pass
 
 # armar oración final, tal vez sólo parcial
 if not seguir_filtrando:
-    mensaje_final = repr("Podrás encontrar {} {} que buscas en el {}".format(articulo_definido, repr(sustantivo), '; '.join(pasillos)))
+    mensaje_final = "Podrás encontrar {} {} que buscas en el {}".format(articulo_definido, sustantivo.encode('utf-8'), '; '.join(pasillos).encode('utf-8'))
 else:
-    mensaje_final = repr("Podrás encontrar {} {} que buscas en el ".format(articulo_definido, repr(sustantivo)))
+    mensaje_final = "Podrás encontrar {} {} que buscas en el ".format(articulo_definido, sustantivo.encode('utf-8'))
 
 output = {
     'header': header,
     'data': filtered,
-    'categorias_a_usuario': [categoria.title() for categoria in categorias_a_usuario],
-    'categoria_actual': categoria_actual+1,
+    'categorias_a_usuario': [categoria for categoria in categorias_a_usuario],
+    'categoria_actual': categoria_actual,
     'seguir_filtrando': seguir_filtrando,
     'mensaje_final': mensaje_final
 }
 
 output = json.dumps(byteify(output), ensure_ascii=False)
 
-print_sans(filtered)
+#print_sans(filtered)
 
 print ""
 print output
