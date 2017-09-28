@@ -6,7 +6,7 @@ import json, csv, os, re
 try:
     import requests
     from tabulate import tabulate
-    query = "donde estan una parrilla"
+    query = "donde encuentro una parrilla"
 
     url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
     params = {
