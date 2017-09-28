@@ -6,7 +6,7 @@ import json, csv, os, re
 try:
     import requests
     from tabulate import tabulate
-    query = "donde puedo encontrar colchones"
+    query = "donde puedo encontrar sillas de jardín"
 
     url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
     params = {
@@ -245,13 +245,38 @@ if not seguir_filtrando:
 else:
    categorias_a_usuario.extend(["Subcategorías"])
 
+# en base a género y número del producto, preparar 'artículo definido' de la oración
+sustantivo = producto['text']['content']
+if producto['partOfSpeech']['gender'] == 'FEMININE':
+    if producto['partOfSpeech']['number'] == 'SINGULAR':
+        articulo_definido = 'la'
+    else:
+        articulo_definido = 'las'
+else:
+    if producto['partOfSpeech']['number'] == 'SINGULAR':
+        articulo_definido = 'el'
+    else:
+        articulo_definido = 'los'
+if third_noun:
+    palabras = [tokens[index]['text']['content'] for index in search_pattern(["NOUN","ADP","NOUN","ADP","NOUN"], "tag")]
+    sustantivo = ' '.join(palabras)
+elif second_noun:
+    palabras = [tokens[index]['text']['content'] for index in search_pattern(["NOUN","ADP","NOUN"], "tag")]
+    sustantivo = ' '.join(palabras)
+
+# armar oración final, tal vez sólo parcial
+if not seguir_filtrando:
+    mensaje_final = repr("Podrás encontrar {} {} que buscas en el {}".format(articulo_definido, repr(sustantivo), '; '.join(pasillos)))
+else:
+    mensaje_final = repr("Podrás encontrar {} {} que buscas en el ".format(articulo_definido, repr(sustantivo)))
+
 output = {
     'header': header,
     'data': filtered,
     'categorias_a_usuario': categorias_a_usuario,
     'categoria_actual': categoria_actual+1,
     'seguir_filtrando': seguir_filtrando,
-    'keywords': keywords
+    'mensaje_final': mensaje_final
 }
 
 output = json.dumps(byteify(output), ensure_ascii=False)
@@ -259,6 +284,6 @@ output = json.dumps(byteify(output), ensure_ascii=False)
 print_sans(filtered)
 
 print ""
-#print output
+print output
 response.write(output)
 response.close()
