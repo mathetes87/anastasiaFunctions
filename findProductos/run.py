@@ -6,7 +6,7 @@ import json, csv, os, re
 try:
     import requests
     from tabulate import tabulate
-    query = "donde encuentro una parrilla"
+    query = "donde encuentro el baño"
 
     url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
     params = {
@@ -309,9 +309,9 @@ output = {
 
 output = json.dumps(byteify(output), ensure_ascii=False)
 
-#print_sans(filtered)
+print_sans(filtered)
 
 print ""
-print output
+#print output
 response.write(output)
 response.close()
