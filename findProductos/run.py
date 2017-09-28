@@ -6,7 +6,7 @@ import json, csv, os, re
 try:
     import requests
     from tabulate import tabulate
-    query = "donde encuentro el baño"
+    query = "donde encuentro una parrilla"
 
     url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
     params = {
@@ -294,7 +294,10 @@ except:
 
 # armar oración final, tal vez sólo parcial
 if not seguir_filtrando:
-    mensaje_final = "Podrás encontrar {} {} que buscas en el {}".format(articulo_definido, sustantivo.encode('utf-8'), '; '.join(pasillos).encode('utf-8'))
+    if len(pasillos) > 0:
+        mensaje_final = "Podrás encontrar {} {} que buscas en el {}".format(articulo_definido, sustantivo.encode('utf-8'), '; '.join(pasillos).encode('utf-8'))
+    else:
+        mensaje_final = "No tenemos {} en Sodimac".format(sustantivo.encode('utf-8'))
 else:
     mensaje_final = "Podrás encontrar {} {} que buscas en el ".format(articulo_definido, sustantivo.encode('utf-8'))
 
