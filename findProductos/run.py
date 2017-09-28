@@ -6,7 +6,7 @@ import json, csv, os, re
 try:
     import requests
     from tabulate import tabulate
-    query = "donde encuentro una parrilla"
+    query = "donde esta el carbón?"
 
     url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
     params = {
@@ -205,8 +205,11 @@ n_categorias = n_categorias(header)
 # quitar productos sin match de pasillo
 filtered_base = filter_data_by_word("Sin info", -1, data, case_sensitive=False, keep_if_found=False)
 
-# filtrar segun nombre del producto
-filtered = filter_data_by_word(producto['text']['content'], header.index('Nombre'), filtered_base)
+if producto:
+    # filtrar segun nombre del producto
+    filtered = filter_data_by_word(producto['text']['content'], header.index('Nombre'), filtered_base)
+else:
+    filtered = []
 
 try:
     # unir filtrado de lemma sin duplicar filas
@@ -242,7 +245,10 @@ for row in filtered:
                     row[j] = row[i]
                 break
 
-print "\nProductos encontrados: {} {}".format(len(filtered), repr(producto['text']['content']))
+try:
+    print "\nProductos encontrados: {} {}".format(len(filtered), repr(producto['text']['content']))
+except:
+    pass
 
 if filtered:
     pasillos = list(set([row[header.index('pasillo')] for row in filtered]))
@@ -270,36 +276,39 @@ if not seguir_filtrando:
 else:
     categorias_a_usuario.extend(["Subcategorías"])
 
-# en base a género y número del producto, preparar 'artículo definido' de la oración
-sustantivo = producto['text']['content']
-if producto['partOfSpeech']['gender'] == 'FEMININE':
-    if producto['partOfSpeech']['number'] == 'SINGULAR':
-        articulo_definido = 'la'
+if producto:
+    # en base a género y número del producto, preparar 'artículo definido' de la oración
+    sustantivo = producto['text']['content']
+    if producto['partOfSpeech']['gender'] == 'FEMININE':
+        if producto['partOfSpeech']['number'] == 'SINGULAR':
+            articulo_definido = 'la'
+        else:
+            articulo_definido = 'las'
     else:
-        articulo_definido = 'las'
-else:
-    if producto['partOfSpeech']['number'] == 'SINGULAR':
-        articulo_definido = 'el'
-    else:
-        articulo_definido = 'los'
-try:
-    if third_noun:
-        palabras = [tokens[index]['text']['content'] for index in search_pattern(["NOUN","ADP","NOUN","ADP","NOUN"], "tag")]
-        sustantivo = ' '.join(palabras)
-    elif second_noun:
-        palabras = [tokens[index]['text']['content'] for index in search_pattern(["NOUN","ADP","NOUN"], "tag")]
-        sustantivo = ' '.join(palabras)
-except:
-    pass
+        if producto['partOfSpeech']['number'] == 'SINGULAR':
+            articulo_definido = 'el'
+        else:
+            articulo_definido = 'los'
+    try:
+        if third_noun:
+            palabras = [tokens[index]['text']['content'] for index in search_pattern(["NOUN","ADP","NOUN","ADP","NOUN"], "tag")]
+            sustantivo = ' '.join(palabras)
+        elif second_noun:
+            palabras = [tokens[index]['text']['content'] for index in search_pattern(["NOUN","ADP","NOUN"], "tag")]
+            sustantivo = ' '.join(palabras)
+    except:
+        pass
 
-# armar oración final, tal vez sólo parcial
-if not seguir_filtrando:
-    if len(pasillos) > 0:
-        mensaje_final = "Podrás encontrar {} {} que buscas en el {}".format(articulo_definido, sustantivo.encode('utf-8'), '; '.join(pasillos).encode('utf-8'))
+    # armar oración final, tal vez sólo parcial
+    if not seguir_filtrando:
+        if len(pasillos) > 0:
+            mensaje_final = "Podrás encontrar {} {} que buscas en el {}".format(articulo_definido, sustantivo.encode('utf-8'), '; '.join(pasillos).encode('utf-8'))
+        else:
+            mensaje_final = "No tenemos {} en Sodimac".format(sustantivo.encode('utf-8'))
     else:
-        mensaje_final = "No tenemos {} en Sodimac".format(sustantivo.encode('utf-8'))
+        mensaje_final = "Podrás encontrar {} {} que buscas en el ".format(articulo_definido, sustantivo.encode('utf-8'))
 else:
-    mensaje_final = "Podrás encontrar {} {} que buscas en el ".format(articulo_definido, sustantivo.encode('utf-8'))
+    mensaje_final = "Porfa escribe en español más formal ;)"
 
 output = {
     'header': header,
@@ -315,6 +324,6 @@ output = json.dumps(byteify(output), ensure_ascii=False)
 print_sans(filtered)
 
 print ""
-#print output
+print output
 response.write(output)
 response.close()
