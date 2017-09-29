@@ -6,7 +6,7 @@ import json, csv, os, re
 try:
     import requests
     from tabulate import tabulate
-    query = "donde esta el carbón?"
+    query = "donde estan las parrillas?"
 
     url ='https://language.googleapis.com/v1beta2/documents:analyzeSyntax?fields=language%2Ctokens&key=AIzaSyCeC5Dnx1qOfNKgUY6PUnl8IcCcx53nLwQ'
     params = {
@@ -165,6 +165,10 @@ if root_is_noun:
     producto = root
 else:
     producto = closest_noun
+
+# casos especiales
+#parrilla
+producto['lemma'] = "parrilla" if producto['lemma'] == "parra" else producto['lemma']
 
 if first_noun and tokens[first_noun] is not closest_noun:
     keywords.append(tokens[first_noun]['text']['content']) 
