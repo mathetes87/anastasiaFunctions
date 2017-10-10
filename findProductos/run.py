@@ -308,7 +308,7 @@ if producto:
         if len(pasillos) > 0:
             mensaje_final = "Podrás encontrar {} {} que buscas en el {}".format(articulo_definido, sustantivo.encode('utf-8'), '; '.join(pasillos).encode('utf-8'))
         else:
-            mensaje_final = "No tenemos {} en Sodimac".format(sustantivo.encode('utf-8'))
+            mensaje_final = "No tenemos {}".format(sustantivo.encode('utf-8'))
     else:
         mensaje_final = "Podrás encontrar {} {} que buscas en el ".format(articulo_definido, sustantivo.encode('utf-8'))
 else:
